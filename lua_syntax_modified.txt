@@ -1,0 +1,71 @@
+Lua Grammar modified to match Combinatorial Parser needs
+
+prior8 ::= `or´
+prior7 ::= `and´
+prior6 ::= `<´ | `>´ | `<=´ | `>=´ | `~=´ | `==´
+prior5 ::= `..´
+prior4 ::= `+´ | `-´
+prior3 ::= `*´ | `/´ | `%´
+unop ::= `not´ | `#´ | `-´
+prior1 ::= `^´
+
+callee ::= Name | `(´ exp `)´
+rte ::= STAR<args | `:´ Name args | `[´ exp `]´ | `.´ Name>
+atom ::= `nil´ | `false´ | `true´ | Number | String | `...´ | function |
+    callee rte | tableconstructor
+exp1 = atom STAR<prior1 atom>
+exp2 = STAR<unop> exp1
+exp3 = exp2 STAR<prior3 exp2>
+exp4 = exp3 STAR<prior4 exp3>
+exp5 = exp4 STAR<prior5 exp4>
+exp6 = exp5 STAR<prior6 exp5>
+exp7 = exp6 STAR<prior7 exp6>
+exp = exp7 STAR<prior8 exp7>
+
+var ::= Name STAR< STAR<args | `:´ Name args> OR<`[´ exp `]´ , `.´ Name> > |
+    `(´ exp `)´ PLUS< STAR<args | `:´ Name args> OR<`[´ exp `]´ , `.´ Name> >
+functioncall ::=
+    `(´ exp `)´ PLUS<args | `:´ Name args> |
+    var PLUS<args | `:´ Name args>
+
+varlist ::= var STAR<`,´ var>
+
+namelist ::= Name STAR<`,´ Name>
+
+explist ::= exp STAR<`,´ exp>
+
+args ::=  `(´ OPT<explist> `)´ | tableconstructor | String
+
+parlist ::= namelist OPT<`,´ `...´> | `...´
+
+funcname ::= Name STAR<`.´ Name> OPT<`:´ Name>
+
+funcbody ::= `(´ OPT<parlist> `)´ block end
+
+function ::= `function´ funcbody
+
+field ::= `[´ exp `]´ `=´ exp | Name `=´ exp | exp
+
+fieldsep ::= `,´ | `;´
+
+fieldlist ::= field STAR<fieldsep field> OPT<fieldsep>
+
+tableconstructor ::= `{´ OPT<fieldlist> `}´
+
+chunk ::= STAR<stat OPT<`;´>> OPT<laststat OPT<`;´>>
+
+block ::= chunk
+
+stat ::=  varlist `=´ explist | 
+    functioncall | 
+    `do´ block `end´ | 
+    `while´ exp `do´ block `end´ | 
+    `repeat´ block `until´ exp | 
+    `if´ exp `then´ block STAR<`elseif´ exp `then´ block> OPT<`else´ block> `end´ | 
+    `for´ Name `=´ exp `,´ exp OPT<`,´ exp> `do´ block `end´ | 
+    `for´ namelist `in´ explist `do´ block `end´ | 
+    `function´ funcname funcbody | 
+    `local´ `function´ Name funcbody | 
+    `local´ namelist OPT<`=´ explist> 
+
+laststat ::= `return´ OPT<explist> | `break´
